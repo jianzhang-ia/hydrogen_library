@@ -1,0 +1,8 @@
+# Ignore everything
+*
+
+# Whitelist the web directory and its contents
+!/web/
+
+# Whitelist this file
+!.gitignore
