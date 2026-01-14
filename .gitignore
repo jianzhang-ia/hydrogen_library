@@ -1,8 +1,9 @@
 # Ignore everything
 *
 
-# Whitelist web directory
+# Whitelist web files recursively
 !/web/
+!/web/**
 
 # Keep gitignore
 !.gitignore
