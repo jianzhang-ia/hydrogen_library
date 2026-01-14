@@ -1,8 +1,12 @@
-# Ignore everything in the root directory
-/*
+# Ignore everything
+*
 
-# Do not ignore .gitignore
+# Whitelist web files in root
+!index.html
+!app.js
+!style.css
+!data/
+!data/**
+
+# Keep gitignore
 !.gitignore
-
-# Do not ignore the web directory
-!/web/
