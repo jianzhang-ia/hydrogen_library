@@ -1,8 +1,8 @@
-# Ignore everything
-*
+# Ignore everything in the root directory
+/*
 
-# Whitelist the web directory and its contents
-!/web/
-
-# Whitelist this file
+# Do not ignore .gitignore
 !.gitignore
+
+# Do not ignore the web directory
+!/web/
