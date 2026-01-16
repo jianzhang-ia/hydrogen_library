@@ -1,0 +1,187 @@
+<!-- UNIFIED ANALYSIS SECTION REDESIGN -->
+<!-- Design System:
+  - All sections use consistent card: bg-slate-800/40, border-2 border-slate-600, rounded-xl, p-8
+  - All headings: text-3xl font-bold mb-8 with 4xl emoji
+  - All body text: text-base text-slate-200, leading-relaxed
+  - All evidence quotes: border-l-4 with matching color, italic, text-sm
+  - Consistent spacing: space-y-12 for sections, space-y-6 for items
+-->
+
+<div x-show="tab === 'analysis'" class="max-w-7xl mx-auto px-8 py-10">
+
+    <!-- No Data State -->
+    <div x-show="!selected.has_data" class="text-center py-32">
+        <div class="text-7xl mb-6 opacity-40">📊</div>
+        <h3 class="text-3xl font-bold text-slate-400 mb-3">No Structured Data Available</h3>
+        <p class="text-lg text-slate-500">This document has not been analyzed for policy instruments.</p>
+    </div>
+
+    <!-- Analysis Sections - Unified Design -->
+    <div x-show="selected.has_data" class="space-y-12">
+
+        <!-- 1. DEVELOPMENT GOALS TIMELINE -->
+        <section x-show="selected.analysis.targets && selected.analysis.targets.length > 0"
+            class="bg-slate-800/40 border-2 border-slate-600 rounded-xl p-8">
+            <h2 class="text-3xl font-bold text-sky-300 mb-8 flex items-center gap-3">
+                <span class="text-4xl">🎯</span> Development Goals & Targets
+            </h2>
+            <div class="space-y-8">
+                <template x-for="t in selected.analysis.targets">
+                    <div class="border-l-4 border-sky-500 pl-6">
+                        <!-- Timeline Period -->
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl font-bold text-white" x-text="t.timeline"></span>
+                            <span x-show="t.is_period"
+                                class="bg-sky-600/20 text-sky-300 text-sm px-3 py-1 rounded-full border border-sky-500/40">Period</span>
+                        </div>
+
+                        <!-- Metrics Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                            <template x-for="item in t.items">
+                                <div class="bg-slate-900/60 rounded-lg p-5 border border-slate-600">
+                                    <div class="text-xs text-sky-400 uppercase tracking-wider mb-2 font-semibold"
+                                        x-text="item.topic"></div>
+                                    <div class="flex items-baseline gap-2 mb-2">
+                                        <span class="text-2xl font-bold text-white" x-text="item.value"></span>
+                                        <span class="text-base text-sky-200" x-text="item.unit"></span>
+                                    </div>
+                                    <div class="text-base text-slate-200 leading-relaxed" x-text="item.description">
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Evidence -->
+                        <div class="border-l-4 border-sky-600/30 pl-4 italic text-sm text-slate-400 leading-relaxed">
+                            "<span x-text="t.evidence_quote"></span>"
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- 2. FISCAL SUBSIDIES -->
+        <section x-show="selected.analysis.subsidies && selected.analysis.subsidies.length > 0"
+            class="bg-slate-800/40 border-2 border-slate-600 rounded-xl p-8">
+            <h2 class="text-3xl font-bold text-emerald-300 mb-8 flex items-center gap-3">
+                <span class="text-4xl">💰</span> Fiscal Subsidies & Support
+            </h2>
+            <div class="space-y-4">
+                <template x-for="sub in selected.analysis.subsidies">
+                    <div
+                        class="bg-slate-900/60 rounded-lg p-6 border border-slate-600 hover:border-emerald-500/50 transition-all">
+                        <div class="grid grid-cols-12 gap-4 items-start">
+                            <!-- Type Badge -->
+                            <div class="col-span-2">
+                                <span
+                                    class="inline-block px-3 py-1.5 rounded-lg text-xs font-bold uppercase bg-emerald-600/20 text-emerald-300 border border-emerald-500/40"
+                                    x-text="sub.type"></span>
+                            </div>
+
+                            <!-- Item Name -->
+                            <div class="col-span-3">
+                                <div class="font-bold text-lg text-white leading-relaxed" x-text="sub.item"></div>
+                            </div>
+
+                            <!-- Standard/Value -->
+                            <div class="col-span-4">
+                                <div class="text-base text-cyan-200 font-mono leading-relaxed" x-text="sub.standard">
+                                </div>
+                            </div>
+
+                            <!-- Conditions -->
+                            <div class="col-span-3">
+                                <div class="text-base text-slate-300 leading-relaxed" x-text="sub.conditions || '-'">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- 3. TAX & FINANCE -->
+        <section x-show="Object.keys(selected.analysis.taxes).length > 0"
+            class="bg-slate-800/40 border-2 border-slate-600 rounded-xl p-8">
+            <h2 class="text-3xl font-bold text-purple-300 mb-8 flex items-center gap-3">
+                <span class="text-4xl">🏦</span> Tax & Finance Policies
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <template x-for="(val, key) in selected.analysis.taxes">
+                    <div x-show="val && val.value" class="bg-slate-900/60 rounded-lg p-6 border border-slate-600">
+                        <div class="text-lg font-bold text-purple-300 mb-3 capitalize"
+                            x-text="key.replace('tax_', '').replace(/_/g, ' ')"></div>
+                        <div class="text-base text-slate-200 mb-4 leading-relaxed" x-text="val.value"></div>
+                        <div x-show="val.evidence"
+                            class="border-l-4 border-purple-600/30 pl-4 italic text-sm text-slate-400 leading-relaxed">
+                            "<span x-text="val.evidence"></span>"
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- 4. R&D & INNOVATION -->
+        <section x-show="Object.keys(selected.analysis.rd).length > 0"
+            class="bg-slate-800/40 border-2 border-slate-600 rounded-xl p-8">
+            <h2 class="text-3xl font-bold text-cyan-300 mb-8 flex items-center gap-3">
+                <span class="text-4xl">🔬</span> R&D & Innovation Support
+            </h2>
+            <div class="space-y-6">
+                <template x-for="(val, key) in selected.analysis.rd">
+                    <div x-show="val" class="bg-slate-900/60 rounded-lg p-6 border border-slate-600">
+                        <div class="text-lg font-bold text-cyan-300 mb-3 capitalize" x-text="key.replace(/_/g, ' ')">
+                        </div>
+                        <div class="text-base text-slate-200 mb-4 leading-relaxed" x-text="val.value"></div>
+                        <div x-show="val.evidence"
+                            class="border-l-4 border-cyan-600/30 pl-4 italic text-sm text-slate-400 leading-relaxed">
+                            "<span x-text="val.evidence"></span>"
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- 5. STANDARDS & FACTORS -->
+        <section x-show="Object.keys({...selected.analysis.factors, ...selected.analysis.standards}).length > 0"
+            class="bg-slate-800/40 border-2 border-slate-600 rounded-xl p-8">
+            <h2 class="text-3xl font-bold text-orange-300 mb-8 flex items-center gap-3">
+                <span class="text-4xl">⚖️</span> Standards & Development Factors
+            </h2>
+            <div class="space-y-6">
+                <template x-for="(val, key) in {...selected.analysis.factors, ...selected.analysis.standards}">
+                    <div x-show="val" class="bg-slate-900/60 rounded-lg p-6 border border-slate-600">
+                        <div class="text-lg font-bold text-orange-300 mb-3 capitalize" x-text="key.replace(/_/g, ' ')">
+                        </div>
+                        <div class="text-base text-slate-200 mb-4 leading-relaxed" x-text="val.value"></div>
+                        <div x-show="val.evidence"
+                            class="border-l-4 border-orange-600/30 pl-4 italic text-sm text-slate-400 leading-relaxed">
+                            "<span x-text="val.evidence"></span>"
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- 6. OTHER POLICY INSTRUMENTS -->
+        <section x-show="selected.analysis.other && selected.analysis.other.length > 0"
+            class="bg-slate-800/40 border-2 border-slate-600 rounded-xl p-8">
+            <h2 class="text-3xl font-bold text-indigo-300 mb-8 flex items-center gap-3">
+                <span class="text-4xl">🔧</span> Other Policy Instruments
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <template x-for="inst in selected.analysis.other">
+                    <div class="bg-slate-900/60 rounded-lg p-6 border border-slate-600">
+                        <div class="text-lg font-bold text-indigo-300 mb-3" x-text="inst.name"></div>
+                        <div class="text-base text-slate-200 mb-4 leading-relaxed" x-text="inst.details"></div>
+                        <div x-show="inst.evidence"
+                            class="border-l-4 border-indigo-600/30 pl-4 italic text-sm text-slate-400 leading-relaxed">
+                            "<span x-text="inst.evidence"></span>"
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+    </div>
+</div>

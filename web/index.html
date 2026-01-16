@@ -69,20 +69,47 @@
                             <option :value="p" x-text="p"></option>
                         </template>
                     </select>
-                    <select x-model="filterYear"
-                        class="w-24 px-3 py-1.5 bg-white border border-gray-300 rounded text-sm text-gray-600">
-                        <option value="">Year</option>
-                        <template x-for="y in meta.years">
-                            <option :value="y" x-text="y"></option>
+                    <select x-model="filterCity" :disabled="!filterProv || availableCities.length === 0"
+                        :class="(!filterProv || availableCities.length === 0) ? 'opacity-50 cursor-not-allowed' : ''"
+                        class="flex-1 px-3 py-1.5 bg-white border border-gray-300 rounded text-sm text-gray-600">
+                        <option value="">All Cities</option>
+                        <template x-for="c in availableCities">
+                            <option :value="c" x-text="c"></option>
                         </template>
                     </select>
                 </div>
-                <!-- Checkbox -->
-                <div class="flex items-center gap-2 mt-2">
-                    <input type="checkbox" id="hideEmpty" x-model="hideEmpty"
-                        class="rounded text-blue-600 focus:ring-blue-500">
-                    <label for="hideEmpty" class="text-xs text-gray-600 cursor-pointer select-none">Show only entries
-                        with AI analysis</label>
+                <!-- Filter Checkboxes -->
+                <div class="space-y-2 mt-2">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="hideEmpty" x-model="hideEmpty"
+                            class="rounded text-blue-600 focus:ring-blue-500">
+                        <label for="hideEmpty" class="text-xs text-gray-600 cursor-pointer select-none">Show only
+                            entries with AI analysis</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="hasSubsidies" x-model="hasSubsidies"
+                            class="rounded text-emerald-600 focus:ring-emerald-500">
+                        <label for="hasSubsidies" class="text-xs text-gray-600 cursor-pointer select-none">Has Fiscal
+                            Subsidies</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="hasTargets" x-model="hasTargets"
+                            class="rounded text-blue-600 focus:ring-blue-500">
+                        <label for="hasTargets" class="text-xs text-gray-600 cursor-pointer select-none">Has Development
+                            Targets</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="hasTax" x-model="hasTax"
+                            class="rounded text-purple-600 focus:ring-purple-500">
+                        <label for="hasTax" class="text-xs text-gray-600 cursor-pointer select-none">Has Tax &
+                            Finance</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="hasOther" x-model="hasOther"
+                            class="rounded text-indigo-600 focus:ring-indigo-500">
+                        <label for="hasOther" class="text-xs text-gray-600 cursor-pointer select-none">Has Other
+                            Instruments</label>
+                    </div>
                 </div>
             </div>
 
@@ -96,14 +123,14 @@
                             <span
                                 class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 truncate max-w-[120px]"
                                 x-text="doc.province"></span>
-                            <span class="text-xs text-gray-400 font-mono" x-text="doc.year || 'N/A'"></span>
+                            <span class="text-xs text-gray-400" x-text="doc.city || doc.province"></span>
                         </div>
                         <h3 class="text-sm font-semibold text-gray-900 leading-tight mb-2" x-text="doc.title"></h3>
                         <!-- Tags -->
                         <div class="flex flex-wrap gap-1">
                             <template x-for="tag in doc.instrument_tags.slice(0, 3)">
                                 <span class="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded"
-                                    x-text="tag.split('_').pop().replace('subsidy','Subsidy')"></span>
+                                    x-text="formatTag(tag)"></span>
                             </template>
                         </div>
                     </div>
@@ -157,9 +184,9 @@
                     <div class="flex-1 overflow-y-auto p-8 custom-scroller">
 
                         <!-- VIEW: Analysis -->
-                        <div x-show="tab === 'analysis'" class="space-y-8 max-w-4xl mx-auto">
+                        <div x-show="tab === 'analysis'" class="space-y-6 max-w-4xl mx-auto">
 
-                            <!-- New: Empty State for Analysis -->
+                            <!-- No Data State -->
                             <div x-show="!selected.has_data"
                                 class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg flex items-start gap-3">
                                 <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor"
@@ -170,103 +197,120 @@
                                 <div>
                                     <p class="font-semibold">No Specific Economic Data Found</p>
                                     <p class="text-sm mt-1">The AI analysis did not identify specific targets,
-                                        subsidies, or tax incentives in this document. It may be a general guideline or
-                                        administrative notice.</p>
-                                    <button @click="tab = 'text'" class="text-sm underline mt-2 font-medium">Read Full
-                                        Text Instead &rarr;</button>
+                                        subsidies, or tax incentives in this document.</p>
                                 </div>
                             </div>
 
-                            <!-- Analysis Cards -->
-                            <!-- Analysis Cards (Full Width for Readability) -->
+                            <!-- Analysis Sections with Clean White Cards -->
                             <div x-show="selected.has_data" class="space-y-6">
 
-                                <!-- Targets -->
-                                <div x-show="Object.keys(selected.analysis.targets).length > 0"
-                                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                                    <h3 class="text-gray-900 font-semibold mb-4 flex items-center gap-2 text-lg">
-                                        <span>📈</span> Quantitative Targets
-                                    </h3>
-                                    <div class="space-y-4">
-                                        <template x-for="(val, key) in selected.analysis.targets">
-                                            <div x-show="val" class="text-sm">
-                                                <div class="flex justify-between items-baseline mb-1">
-                                                    <span class="text-gray-600 font-medium capitalize"
-                                                        x-text="key.replace('target_', '').replace(/_/g, ' ')"></span>
-                                                    <span
-                                                        class="font-mono font-bold text-gray-900 bg-gray-100 px-2 rounded"
-                                                        x-text="val.value"></span>
-                                                </div>
-                                                <div x-show="val.evidence"
-                                                    class="mt-2 text-gray-600 bg-gray-50 p-3 rounded border-l-4 border-blue-400">
-                                                    "<span x-text="val.evidence"></span>"
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-
-                                <!-- Funding & Finance -->
-                                <div x-show="Object.keys({...selected.analysis.subsidies, ...selected.analysis.taxes}).length > 0"
-                                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                                    <h3 class="text-gray-900 font-semibold mb-4 flex items-center gap-2 text-lg">
-                                        <span>💰</span> Incentives & Finance
-                                    </h3>
-                                    <div class="grid grid-cols-1 gap-6">
-                                        <template
-                                            x-for="(val, key) in {...selected.analysis.subsidies, ...selected.analysis.taxes}">
-                                            <div x-show="val && (val.value || val.evidence)"
-                                                class="text-sm border-b border-gray-100 last:border-0 pb-4 last:pb-0">
-                                                <div class="font-bold text-gray-800 mb-1 capitalize text-base"
-                                                    x-text="key.replace('fiscal_', '').replace('tax_', '').replace(/_/g, ' ')">
-                                                </div>
-                                                <div class="mb-2 text-gray-700"
-                                                    x-text="val.value || 'Policy Support Mentioned'"></div>
-                                                <div x-show="val.evidence"
-                                                    class="text-gray-600 bg-emerald-50 p-3 rounded border-l-4 border-emerald-400 font-serif">
-                                                    "<span x-text="val.evidence"></span>"
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-
-                                <!-- R&D and Innovation -->
-                                <div x-show="Object.keys(selected.analysis.rd).length > 0"
-                                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                                    <h3 class="text-gray-900 font-semibold mb-4 flex items-center gap-2 text-lg">
-                                        <span>🔬</span> R&D & Innovation
+                                <!-- Development Goals -->
+                                <div x-show="selected.analysis.targets && selected.analysis.targets.length > 0"
+                                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <h3 class="text-blue-600 font-semibold mb-5 flex items-center gap-2 text-base">
+                                        <span>🎯</span> Development Goals & Targets
                                     </h3>
                                     <div class="space-y-6">
-                                        <template x-for="(val, key) in selected.analysis.rd">
-                                            <div x-show="val" class="text-sm">
-                                                <div class="font-bold text-gray-800 mb-1 capitalize text-base"
-                                                    x-text="key.replace(/_/g, ' ')"></div>
-                                                <div class="mb-2 text-gray-700" x-text="val.value"></div>
-                                                <div x-show="val.evidence"
-                                                    class="text-gray-600 bg-purple-50 p-3 rounded border-l-4 border-purple-400 font-serif">
-                                                    "<span x-text="val.evidence"></span>"
+                                        <template x-for="t in selected.analysis.targets">
+                                            <div class="border-l-4 border-blue-500 pl-4 bg-blue-50/30 py-3 rounded-r">
+                                                <div class="flex items-center gap-2 mb-3">
+                                                    <span class="text-gray-900 font-bold text-base"
+                                                        x-text="t.timeline"></span>
+                                                    <span x-show="t.is_period"
+                                                        class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded font-medium">Period</span>
+                                                </div>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                                    <template x-for="item in t.items">
+                                                        <div
+                                                            class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                                                            <div class="text-xs text-blue-600 uppercase mb-1.5 font-semibold tracking-wide"
+                                                                x-text="item.topic"></div>
+                                                            <div class="flex items-baseline gap-2 mb-2">
+                                                                <span class="text-gray-900 font-bold text-xl"
+                                                                    x-text="item.value"></span>
+                                                                <span class="text-blue-600 text-sm font-medium"
+                                                                    x-text="item.unit"></span>
+                                                            </div>
+                                                            <div class="text-sm text-gray-700 leading-relaxed"
+                                                                x-text="item.description"></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                                <div
+                                                    class="text-xs text-gray-500 italic pl-3 border-l-2 border-gray-300 leading-relaxed">
+                                                    "<span x-text="t.evidence_quote"></span>"
                                                 </div>
                                             </div>
                                         </template>
                                     </div>
                                 </div>
 
-                                <!-- Standards & Factors -->
-                                <div x-show="Object.keys({...selected.analysis.factors, ...selected.analysis.standards}).length > 0"
-                                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                                    <h3 class="text-gray-900 font-semibold mb-4 flex items-center gap-2 text-lg">
-                                        <span>⚖️</span> Standards & Factors
+                                <!-- Fiscal Subsidies -->
+                                <div x-show="selected.analysis.subsidies && selected.analysis.subsidies.length > 0"
+                                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <h3 class="text-emerald-600 font-semibold mb-5 flex items-center gap-2 text-base">
+                                        <span>💰</span> Fiscal Subsidies & Support
                                     </h3>
-                                    <div class="space-y-6">
-                                        <template
-                                            x-for="(val, key) in {...selected.analysis.factors, ...selected.analysis.standards}">
-                                            <div x-show="val" class="text-sm">
-                                                <div class="font-bold text-gray-800 mb-1 capitalize text-base"
-                                                    x-text="key.replace(/_/g, ' ')"></div>
-                                                <div class="mb-2 text-gray-700" x-text="val.value"></div>
+                                    <div class="space-y-3">
+                                        <template x-for="sub in selected.analysis.subsidies">
+                                            <div
+                                                class="bg-emerald-50/40 rounded-lg p-4 border border-emerald-200 hover:bg-emerald-50 transition-colors">
+                                                <div class="flex flex-col gap-3">
+                                                    <!-- Type Badge -->
+                                                    <div>
+                                                        <span
+                                                            class="inline-block px-2.5 py-1 rounded text-xs font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-300"
+                                                            x-text="sub.type"></span>
+                                                    </div>
+                                                    <!-- Main Content Grid -->
+                                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                        <!-- Item -->
+                                                        <div class="md:col-span-1">
+                                                            <div
+                                                                class="text-xs text-emerald-600 font-semibold mb-1 uppercase">
+                                                                Item</div>
+                                                            <div class="font-bold text-gray-900 text-sm break-words"
+                                                                x-text="sub.item"></div>
+                                                        </div>
+                                                        <!-- Standard -->
+                                                        <div class="md:col-span-1">
+                                                            <div
+                                                                class="text-xs text-emerald-600 font-semibold mb-1 uppercase">
+                                                                Standard</div>
+                                                            <div class="text-blue-700 font-mono text-sm font-medium break-words"
+                                                                x-text="sub.standard"></div>
+                                                        </div>
+                                                        <!-- Conditions -->
+                                                        <div class="md:col-span-1">
+                                                            <div
+                                                                class="text-xs text-emerald-600 font-semibold mb-1 uppercase">
+                                                                Conditions</div>
+                                                            <div class="text-gray-700 text-xs leading-relaxed break-words"
+                                                                x-text="sub.conditions || '-'"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Tax & Finance -->
+                                <div x-show="Object.keys(selected.analysis.taxes).length > 0"
+                                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <h3 class="text-purple-600 font-semibold mb-5 flex items-center gap-2 text-base">
+                                        <span>🏦</span> Tax & Finance Policies
+                                    </h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <template x-for="(val, key) in selected.analysis.taxes">
+                                            <div x-show="val && val.value"
+                                                class="bg-purple-50/40 rounded-lg p-4 border border-purple-200">
+                                                <div class="text-sm font-bold text-purple-700 mb-2 capitalize"
+                                                    x-text="key.replace('tax_', '').replace(/_/g, ' ')"></div>
+                                                <div class="text-sm text-gray-800 mb-3 leading-relaxed"
+                                                    x-text="val.value"></div>
                                                 <div x-show="val.evidence"
-                                                    class="text-gray-600 bg-orange-50 p-3 rounded border-l-4 border-orange-400 font-serif">
+                                                    class="text-xs text-gray-500 italic border-l-2 border-purple-300 pl-3 mt-2 leading-relaxed">
                                                     "<span x-text="val.evidence"></span>"
                                                 </div>
                                             </div>
@@ -274,29 +318,28 @@
                                     </div>
                                 </div>
 
-                                <!-- Other Instruments -->
+                                <!-- Other Policy Instruments -->
                                 <div x-show="selected.analysis.other && selected.analysis.other.length > 0"
-                                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                                    <h3 class="text-gray-900 font-semibold mb-4 flex items-center gap-2 text-lg">
-                                        <span>🔧</span> Other Instruments
+                                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <h3 class="text-indigo-600 font-semibold mb-5 flex items-center gap-2 text-base">
+                                        <span>🔧</span> Other Policy Instruments
                                     </h3>
-                                    <div class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <template x-for="inst in selected.analysis.other">
-                                            <div class="bg-gray-50 p-4 rounded-lg">
-                                                <div class="font-bold text-gray-900 mb-1" x-text="inst.name"></div>
-                                                <div class="text-gray-700 text-sm mb-2" x-text="inst.description"></div>
+                                            <div class="bg-indigo-50/40 rounded-lg p-4 border border-indigo-200">
+                                                <div class="text-sm font-bold text-indigo-700 mb-2" x-text="inst.name">
+                                                </div>
+                                                <div class="text-sm text-gray-800 mb-3 leading-relaxed"
+                                                    x-text="inst.details"></div>
                                                 <div x-show="inst.evidence"
-                                                    class="text-xs text-gray-500 italic border-t border-gray-200 pt-2 mt-2">
-                                                    Evidence: "<span x-text="inst.evidence"></span>"
+                                                    class="text-xs text-gray-500 italic border-l-2 border-indigo-300 pl-3 mt-2 leading-relaxed">
+                                                    "<span x-text="inst.evidence"></span>"
                                                 </div>
                                             </div>
                                         </template>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Raw JSON Dump (for debug/trust) -->
-                            <!-- Optional, maybe hidden or minimal -->
                         </div>
 
                         <!-- VIEW: Full Text -->
@@ -318,13 +361,23 @@
             Alpine.data('library', () => ({
                 policies: [],
                 filteredPolicies: [],
-                meta: { provinces: [], years: [] },
+                meta: { provinces: [], provinceCities: {}, years: [] },
                 search: '',
                 filterProv: '',
-                filterYear: '',
+                filterCity: '',
                 hideEmpty: true,
+                hasSubsidies: false,
+                hasTargets: false,
+                hasTax: false,
+                hasOther: false,
                 selected: null,
                 tab: 'analysis', // 'analysis' or 'text'
+
+                // Computed: Available cities based on selected province
+                get availableCities() {
+                    if (!this.filterProv || !this.meta.provinceCities) return [];
+                    return this.meta.provinceCities[this.filterProv] || [];
+                },
 
                 async init() {
                     try {
@@ -338,15 +391,23 @@
                     }
 
                     this.$watch('search', () => this.updateFilter());
-                    this.$watch('filterProv', () => this.updateFilter());
-                    this.$watch('filterYear', () => this.updateFilter());
+                    this.$watch('filterProv', () => {
+                        // Reset city filter when province changes
+                        this.filterCity = '';
+                        this.updateFilter();
+                    });
+                    this.$watch('filterCity', () => this.updateFilter());
                     this.$watch('hideEmpty', () => this.updateFilter());
+                    this.$watch('hasSubsidies', () => this.updateFilter());
+                    this.$watch('hasTargets', () => this.updateFilter());
+                    this.$watch('hasTax', () => this.updateFilter());
+                    this.$watch('hasOther', () => this.updateFilter());
                 },
 
                 updateFilter() {
                     const q = this.search.toLowerCase();
                     const p = this.filterProv;
-                    const y = this.filterYear;
+                    const c = this.filterCity;
                     const hide = this.hideEmpty;
 
                     this.filteredPolicies = this.policies.filter(doc => {
@@ -354,11 +415,19 @@
                         const textMatch = !q || doc.title.toLowerCase().includes(q) || (doc.content && doc.content.toLowerCase().includes(q));
                         // Filters
                         const provMatch = !p || doc.province === p;
-                        const yearMatch = !y || doc.year == y;
-                        // Empty Filter
+                        const cityMatch = !c || doc.city === c;
+                        // Empty Filter (has AI analysis)
                         const dataMatch = !hide || doc.has_data;
+                        // Subsidies Filter
+                        const subsidiesMatch = !this.hasSubsidies || (doc.analysis && doc.analysis.subsidies && doc.analysis.subsidies.length > 0);
+                        // Targets Filter
+                        const targetsMatch = !this.hasTargets || (doc.analysis && doc.analysis.targets && doc.analysis.targets.length > 0);
+                        // Tax Filter
+                        const taxMatch = !this.hasTax || (doc.analysis && doc.analysis.taxes && Object.keys(doc.analysis.taxes).length > 0);
+                        // Other Instruments Filter
+                        const otherMatch = !this.hasOther || (doc.analysis && doc.analysis.other && doc.analysis.other.length > 0);
 
-                        return textMatch && provMatch && yearMatch && dataMatch;
+                        return textMatch && provMatch && cityMatch && dataMatch && subsidiesMatch && targetsMatch && taxMatch && otherMatch;
                     });
                 },
 
@@ -369,6 +438,22 @@
                     } else {
                         this.tab = 'text';
                     }
+                },
+
+                formatTag(tag) {
+                    // Convert underscore-separated tags to readable labels
+                    const tagLabels = {
+                        'construction_subsidy': 'Construction',
+                        'operation_subsidy': 'Operations',
+                        'purchase_subsidy': 'Purchase',
+                        'production_subsidy': 'Production',
+                        'rd_subsidy': 'R&D',
+                        'other_subsidy': 'Other Subsidy',
+                        'finance_support': 'Finance',
+                        'investment_funds': 'Investment',
+                        'tax_breaks': 'Tax Breaks'
+                    };
+                    return tagLabels[tag] || tag.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                 }
             }))
         })
